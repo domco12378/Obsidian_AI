@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0c0f">
+  <title>Obsidian AI</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-mark">✦</div>
+          <div>
+            <div class="brand-title">Obsidian AI</div>
+            <div class="brand-subtitle">Local workspace</div>
+          </div>
+        </div>
+
+        <button class="new-chat" id="newChatBtn">
+          <span class="new-chat-icon">+</span>
+          <span>New chat</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+
+        <div class="sidebar-search">
+          <span>⌕</span>
+          <input id="chatSearch" type="text" placeholder="Search chats">
+        </div>
+
+        <div class="sidebar-label">Chats</div>
+        <div id="chatList" class="chat-list"></div>
+
+        <div class="sidebar-label sidebar-label-row">
+          <span>Workspace</span>
+        </div>
+
+        <button class="nav-item active">
+          <span>✦</span>
+          <span>AI Assistant</span>
+        </button>
+
+        <button class="nav-item" id="connectorsBtn">
+          <span>⊙</span>
+          <span>Connectors</span>
+          <span class="nav-count" id="connectorCount">0</span>
+        </button>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="connection-card">
+          <div class="connection-pulse"></div>
+          <div class="connection-copy">
+            <strong>Local AI ready</strong>
+            <span id="connectionText">Ollama</span>
+          </div>
+          <span class="connection-check">✓</span>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="avatar avatar-user">D</div>
+          <div class="sidebar-user-copy">
+            <strong>Personal workspace</strong>
+            <span>Private on this PC</span>
+          </div>
+          <button class="icon-btn" id="settingsBtn" aria-label="Settings">⋯</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu icon-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
+
+        <div class="topbar-title">
+          <span class="topbar-title-main">AI Assistant</span>
+          <span class="topbar-title-sub" id="topbarSub">Ready</span>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="model-menu">
+            <button class="select-button" id="modelButton">
+              <span class="model-logo" id="modelLogo">Q</span>
+              <span class="select-button-copy">
+                <strong id="modelName">Qwen 3.5 9B</strong>
+                <small id="modelProvider">Local · Ollama</small>
+              </span>
+              <span class="chevron">⌄</span>
+            </button>
+            <div class="popover hidden" id="modelPopover">
+              <div class="popover-title">Model</div>
+              <div class="model-search-row">
+                <span>⌕</span>
+                <input id="modelSearch" type="text" placeholder="Search models">
+              </div>
+              <div id="modelOptions" class="model-options"></div>
+            </div>
+          </div>
+
+          <div class="mode-menu">
+            <button class="select-button compact" id="modeButton">
+              <span class="mode-icon" id="modeIcon">⚡</span>
+              <span id="modeName">Fast</span>
+              <span class="chevron">⌄</span>
+            </button>
+            <div class="popover mode-popover hidden" id="modePopover">
+              <button class="mode-option selected" data-mode="fast">
+                <span class="mode-symbol">⚡</span>
+                <span><strong>Fast</strong><small>No extra reasoning</small></span>
+              </button>
+              <button class="mode-option" data-mode="think">
+                <span class="mode-symbol">◈</span>
+                <span><strong>Think</strong><small>Balanced reasoning</small></span>
+              </button>
+              <button class="mode-option" data-mode="deep">
+                <span class="mode-symbol">✦</span>
+                <span><strong>Deep</strong><small>More reasoning and tool use</small></span>
+              </button>
+            </div>
+          </div>
+
+          <button class="header-tool" id="headerConnectorsBtn" title="Connectors">
+            <span>⊙</span>
+            <span class="header-tool-label">Connectors</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="chat-scroll" id="chatScroll">
+        <div class="conversation" id="conversation">
+          <div class="welcome" id="welcome">
+            <div class="welcome-mark">✦</div>
+            <h1>How can I help?</h1>
+            <p>Chat with local models, switch providers, use MCP tools, and turn answers into notes.</p>
+
+            <div class="prompt-grid">
+              <button class="prompt-card" data-prompt="Create a clean study note about Newton's three laws with five bullet points.">
+                <span class="prompt-icon">✎</span>
+                <span><strong>Make a study note</strong><small>Structured Markdown</small></span>
+              </button>
+              <button class="prompt-card" data-prompt="Explain photosynthesis simply, then give me a five-point summary.">
+                <span class="prompt-icon">◈</span>
+                <span><strong>Explain a topic</strong><small>Simple + clear</small></span>
+              </button>
+              <button class="prompt-card" data-prompt="Give me a practical checklist for preparing for a difficult test.">
+                <span class="prompt-icon">✓</span>
+                <span><strong>Create a checklist</strong><small>Turn ideas into actions</small></span>
+              </button>
+              <button class="prompt-card" data-prompt="Help me organize an Obsidian vault for school, projects, and reference notes.">
+                <span class="prompt-icon">⌘</span>
+                <span><strong>Organize my vault</strong><small>Obsidian workflow</small></span>
+              </button>
+            </div>
+          </div>
+
+          <div id="messages"></div>
+
+          <div class="typing-row hidden" id="typingRow">
+            <div class="avatar avatar-ai">✦</div>
+            <div class="typing-card">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <span id="typingText">Thinking…</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="composer-area">
+        <div class="composer-shell">
+          <div class="composer-toolbar">
+            <button class="toolbar-btn" id="attachBtn" title="Attach later">＋</button>
+            <button class="toolbar-btn" id="toolsBtn">
+              <span>⊙</span>
+              <span id="toolsLabel">Tools off</span>
+            </button>
+
+            <div class="composer-spacer"></div>
+
+            <button class="toolbar-btn" id="clearChatBtn">Clear</button>
+          </div>
+
+          <textarea id="messageInput" rows="1" placeholder="Message Obsidian AI…"></textarea>
+
+          <div class="composer-bottom">
+            <span class="composer-hint">Enter to send · Shift + Enter for a new line</span>
+            <button class="send-btn" id="sendBtn" aria-label="Send message">↑</button>
+          </div>
+        </div>
+        <div class="composer-disclaimer">
+          Local-first by default · Your NVIDIA key stays on this PC
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <div class="overlay hidden" id="overlay"></div>
+
+  <section class="modal hidden" id="connectorsModal" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <span class="eyebrow">MCP</span>
+        <h2>Connectors</h2>
+        <p>Connect trusted MCP servers and expose their tools to the AI.</p>
+      </div>
+      <button class="modal-close icon-btn" data-close="connectorsModal">×</button>
+    </div>
+
+    <div class="connector-add-card">
+      <div class="section-title">Add connector</div>
+      <div class="form-grid">
+        <label>
+          <span>Name</span>
+          <input id="connectorName" placeholder="My web tools">
+        </label>
+        <label class="full">
+          <span>MCP URL</span>
+          <input id="connectorUrl" placeholder="https://example.com/mcp">
+        </label>
+        <label class="full">
+          <span>Bearer token <em>optional</em></span>
+          <input id="connectorToken" type="password" autocomplete="off" placeholder="Stored locally">
+        </label>
+      </div>
+      <div class="connector-form-actions">
+        <span class="form-help">Streamable HTTP is preferred; legacy SSE is supported as a fallback.</span>
+        <button class="primary-btn" id="addConnectorBtn">Connect</button>
+      </div>
+    </div>
+
+    <div class="modal-section-head">
+      <div class="section-title">Your connectors</div>
+      <span class="section-meta" id="connectorMeta">0 connected</span>
+    </div>
+    <div id="connectorList" class="connector-list"></div>
+  </section>
+
+  <section class="modal small-modal hidden" id="settingsModal" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <span class="eyebrow">Workspace</span>
+        <h2>Settings</h2>
+        <p>Local settings for this app.</p>
+      </div>
+      <button class="modal-close icon-btn" data-close="settingsModal">×</button>
+    </div>
+
+    <label class="settings-field">
+      <span>Obsidian vault folder <em>optional</em></span>
+      <input id="vaultPath" placeholder="C:\Users\You\Documents\Vault">
+    </label>
+    <p class="form-help settings-help">When set, assistant messages can be saved directly as Markdown files.</p>
+
+    <div class="modal-footer">
+      <button class="ghost-btn" data-close="settingsModal">Cancel</button>
+      <button class="primary-btn" id="saveSettingsBtn">Save settings</button>
+    </div>
+  </section>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

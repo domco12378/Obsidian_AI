@@ -1,0 +1,12 @@
+[
+  {
+    "id": "ddced3e7-c7ed-4aea-9040-abfcc997c581",
+    "name": "highsfield",
+    "url": "https://mcp.higgsfield.ai/mcp",
+    "token": "",
+    "enabled": true,
+    "connected": false,
+    "toolCount": 0,
+    "error": "Package subpath './sse' is not defined by \"exports\" in C:\\Users\\Dominik\\Downloads\\obsidian-ai-studio\\obsidian-ai-studio\\node_modules\\@modelcontextprotocol\\client\\package.json imported from C:\\Users\\Dominik\\Downloads\\obsidian-ai-studio\\obsidian-ai-studio\\server.js"
+  }
+]

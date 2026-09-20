@@ -1,0 +1,17 @@
+{
+  "name": "obsidian-ai-studio",
+  "version": "2.0.0",
+  "private": true,
+  "description": "A local ChatGPT/Claude-style AI workspace for Ollama, NVIDIA and MCP connectors.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "dotenv": "^16.4.7"
+  }
+}
