@@ -10,6 +10,10 @@ const OLLAMA_URL = "http://127.0.0.1:11434";
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const CONNECTORS_FILE = path.join(__dirname, "connectors.json");
 
+function getNvidiaApiKey() {
+  return String(process.env.NVIDIA_API_KEY || "").trim();
+}
+
 const NVIDIA_MODELS = [
   ["z-ai/glm-5.3-flash", "GLM 5.3 Flash"],
   ["z-ai/glm-5.3", "GLM 5.3"],
