@@ -651,109 +651,85 @@ async function nonStreamingOllama({
   return { text: finalText, messages: currentMessages };
 }
 
-async function callNvidia({
-  model,
-  messages,
-  mode,
-  tools,
-  toolMap,
-  res,
-  signal,
-  status
-}) {
-  const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) throw new Error("NVIDIA_API_KEY is missing from .env.");
-
+async function callNvidia({ model, messages, mode, tools, toolMap, res, signal, status }) {
+  const apiKey = getNvidiaApiKey();
+  if (!apiKey) throw new Error("NVIDIA cloud is not configured. Add NVIDIA_API_KEY to .env locally, or add it to Render Environment Variables, then restart or redeploy.");
   const options = reasoningOptions(mode);
   let currentMessages = [...messages];
 
   for (let round = 0; round < 5; round++) {
+    const shouldStream = tools.length === 0;
     const response = await fetch(NVIDIA_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: currentMessages,
-        stream: false,
-        temperature: 0.35,
-        reasoning_effort: options.reasoning_effort,
-        clear_thinking: true,
-        max_tokens: options.max_tokens,
-        tools: tools.length ? tools : undefined,
-        tool_choice: tools.length ? "auto" : undefined
-      }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, messages: currentMessages, stream: shouldStream, temperature: 0.35, reasoning_effort: options.reasoning_effort, clear_thinking: true, max_tokens: options.max_tokens, tools: tools.length ? tools : undefined, tool_choice: tools.length ? "auto" : undefined }),
       signal
     });
 
+    if (!response.ok) {
+      const rawError = await response.text();
+      let errorData = {};
+      try { errorData = JSON.parse(rawError); } catch {}
+      if (response.status === 401 || response.status === 403) throw new Error("NVIDIA rejected the API key. Check that NVIDIA_API_KEY is valid, active, and configured on the server.");
+      if (response.status === 410) throw new Error(`NVIDIA model is unavailable (410): ${model}. Choose another cloud model.`);
+      throw new Error(errorData?.error?.message || errorData?.message || `NVIDIA request failed (${response.status}).`);
+    }
+
+    if (shouldStream) {
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("NVIDIA did not return a readable stream.");
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalText = "";
+      const consumeEvent = event => {
+        const line = event.split(/\r?\n/).find(value => value.startsWith("data:"));
+        if (!line) return;
+        const payloadText = line.slice(5).trim();
+        if (!payloadText || payloadText === "[DONE]") return;
+        let payload;
+        try { payload = JSON.parse(payloadText); } catch { return; }
+        if (payload?.error?.message) throw new Error(payload.error.message);
+        const piece = payload?.choices?.map(choice => choice?.delta?.content || "").join("") || "";
+        if (piece) { finalText += piece; sse(res, "delta", { text: piece }); }
+      };
+      while (true) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || "";
+        events.forEach(consumeEvent);
+        if (done) break;
+      }
+      if (buffer.trim()) consumeEvent(buffer);
+      if (!finalText.trim()) throw new Error("NVIDIA returned an empty answer.");
+      currentMessages.push({ role: "assistant", content: finalText });
+      return { text: finalText, messages: currentMessages };
+    }
+
     const raw = await response.text();
     let data;
-
-    try {
-      data = JSON.parse(raw);
-    } catch {
-      throw new Error(`NVIDIA returned invalid data (${response.status}).`);
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        data?.error?.message ||
-        data?.message ||
-        `NVIDIA request failed (${response.status}).`
-      );
-    }
-
+    try { data = JSON.parse(raw); } catch { throw new Error(`NVIDIA returned invalid data (${response.status}).`); }
     const message = data?.choices?.[0]?.message;
     if (!message) throw new Error("NVIDIA returned no message.");
-
     currentMessages.push(message);
-
     if (message.tool_calls?.length) {
       for (const call of message.tool_calls) {
         status?.(`Using ${call.function?.name || "tool"}…`);
-
         let args = {};
-        try {
-          args = typeof call.function.arguments === "string"
-            ? JSON.parse(call.function.arguments)
-            : (call.function.arguments || {});
-        } catch {
-          args = {};
-        }
-
+        try { args = typeof call.function.arguments === "string" ? JSON.parse(call.function.arguments) : (call.function.arguments || {}); } catch { args = {}; }
         let resultText;
-        try {
-          resultText = await callMcpTool(
-            call.function.name,
-            args,
-            toolMap
-          );
-        } catch (error) {
-          resultText = `Tool error: ${error.message}`;
-        }
-
-        currentMessages.push({
-          role: "tool",
-          tool_call_id: call.id,
-          content: resultText
-        });
+        try { resultText = await callMcpTool(call.function.name, args, toolMap); } catch (error) { resultText = `Tool error: ${error.message}`; }
+        currentMessages.push({ role: "tool", tool_call_id: call.id, content: resultText });
       }
-
       continue;
     }
-
     const finalText = String(message.content || "").trim();
     if (!finalText) throw new Error("NVIDIA returned an empty answer.");
-
     sse(res, "delta", { text: finalText });
     return { text: finalText, messages: currentMessages };
   }
-
   throw new Error("Tool loop exceeded the maximum number of rounds.");
 }
-
 async function generateChat({
   modelId,
   mode,
