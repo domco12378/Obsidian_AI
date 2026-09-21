@@ -183,7 +183,7 @@ function normalizeHistory(history, message) {
         (item.role === "user" || item.role === "assistant") &&
         typeof item.content === "string" &&
         item.content.trim()
-      ).slice(-16).map(item => ({
+      ).slice(-10).map(item => ({
         role: item.role,
         content: item.content.trim()
       }))
@@ -415,12 +415,12 @@ async function callMcpTool(toolName, args, toolMap) {
 
 function reasoningOptions(mode) {
   if (mode === "fast") {
-    return { think: false, reasoning_effort: "low", max_tokens: 900 };
+    return { think: false, reasoning_effort: "low", max_tokens: 600 };
   }
   if (mode === "deep") {
-    return { think: true, reasoning_effort: "max", max_tokens: 2400 };
+    return { think: true, reasoning_effort: "high", max_tokens: 1800 };
   }
-  return { think: true, reasoning_effort: "high", max_tokens: 1400 };
+  return { think: true, reasoning_effort: "high", max_tokens: 1000 };
 }
 
 async function streamOllama({
@@ -666,7 +666,7 @@ async function callNvidia({ model, messages, mode, tools, toolMap, res, signal, 
     const response = await fetch(NVIDIA_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model, messages: currentMessages, stream: shouldStream, temperature: 0.35, reasoning_effort: options.reasoning_effort, max_tokens: options.max_tokens, tools: tools.length ? tools : undefined, tool_choice: tools.length ? "auto" : undefined }),
+      body: JSON.stringify({ model, messages: currentMessages, stream: shouldStream, temperature: 0.2, reasoning_effort: options.reasoning_effort, max_tokens: options.max_tokens, tools: tools.length ? tools : undefined, tool_choice: tools.length ? "auto" : undefined }),
       signal
     });
 
@@ -898,7 +898,9 @@ async function serveStatic(req, res) {
     ".svg": "image/svg+xml",
     ".png": "image/png",
     ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg"
+    ".jpeg": "image/jpeg",
+    ".xml": "application/xml; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8"
   }[ext] || "application/octet-stream";
 
   fs.readFile(filePath, (error, data) => {
