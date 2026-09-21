@@ -666,7 +666,7 @@ async function callNvidia({ model, messages, mode, tools, toolMap, res, signal, 
     const response = await fetch(NVIDIA_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model, messages: currentMessages, stream: shouldStream, temperature: 0.35, reasoning_effort: options.reasoning_effort, clear_thinking: true, max_tokens: options.max_tokens, tools: tools.length ? tools : undefined, tool_choice: tools.length ? "auto" : undefined }),
+      body: JSON.stringify({ model, messages: currentMessages, stream: shouldStream, temperature: 0.35, reasoning_effort: options.reasoning_effort, max_tokens: options.max_tokens, tools: tools.length ? tools : undefined, tool_choice: tools.length ? "auto" : undefined }),
       signal
     });
 
